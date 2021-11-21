@@ -7,6 +7,11 @@
 ```
 // You Can Activate Flucreator With This Command Line 
 pub global activate --source git https://github.com/Abdusin/Flucreator.git
+// You can run like this
+fluecretor --org com.abdusin myapp
+// Also you can run with command too 
+// If run without arguments console will ask details
+flucreator
 ```
 
 `$flucreator`             |  `$flutter --create`
