@@ -3,7 +3,7 @@
     You can use Flucreator to create a new Flutter project.
     Automatically create a new Flutter project with Getx & Directories. 
 
-#### Normal Usage
+#### Normal Usage (Project Create)
 ```
 // You Can Activate Flucreator With This Command Line 
 pub global activate --source git https://github.com/Abdusin/Flucreator.git
@@ -12,6 +12,11 @@ fluecretor --org com.abdusin myapp
 // Also you can run with command too 
 // If run without arguments console will ask details
 flucreator
+```
+#### Normal Usage (Screen Create)
+```
+fluecretor --create=screen ExampleScreen
+fluecretor --create=screen --no-controller ExampleScreen
 ```
 
 `$flucreator`             |  `$flutter --create`

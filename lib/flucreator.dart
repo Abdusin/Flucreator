@@ -1,39 +1,54 @@
 import 'dart:io';
 
-void homeControllerSetter(String name) {
-  var homeController = File('$name/lib/controllers/HomeScreenController.dart');
-  homeController.writeAsStringSync('''import 'package:get/get.dart';
+void screenControllerSetter(File file, String name) {
+  file.writeAsStringSync('''import 'package:get/get.dart';
     
-class HomeScreenController extends GetxController {
+class $name extends GetxController {
 
 }
 ''');
+}
+
+void screenSetter(File file, String packageName, String name, [bool noController = false]) {
+  var scaffold = '''return Scaffold(
+      body:Center(
+        child:Text('$name'),
+      ),
+    );''';
+
+  var getController = '''return GetBuilder<${name}Controller>(
+      init: ${name}Controller(),
+      builder: (controller) {
+        return Scaffold(
+          body:Center(
+            child:Text('$name'),
+          ),
+        );
+      },
+    );''';
+
+  file.writeAsStringSync('''import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+${noController ? "" : "import 'package:" + packageName + "/controllers/" + name + "Controller.dart';\n"}
+class $name extends StatelessWidget {
+  const $name({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    ${noController ? scaffold : getController}
+  }
+}
+''');
+}
+
+void homeControllerSetter(String name) {
+  var homeController = File('$name/lib/controllers/HomeScreenController.dart');
+  screenControllerSetter(homeController, 'HomeScreenController');
 }
 
 void homeScreenSetter(String name) {
   var homeScreen = File('$name/lib/screens/HomeScreen.dart');
-  homeScreen.writeAsStringSync('''import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:$name/controllers/HomeScreenController.dart';
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return GetBuilder<HomeScreenController>(
-      init: HomeScreenController(),
-      builder: (controller) {
-        return Scaffold(
-          body:Center(
-            child:Text('Home Screen'),
-          ),
-        );
-      },
-    );
-  }
-}
-''');
+  screenSetter(homeScreen, '$name', 'HomeScreen');
 }
 
 void appSpacesSetter(String name) {
