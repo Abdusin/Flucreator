@@ -17,6 +17,8 @@ void main(List<String> args) async {
         return createProject(args);
       } else if (type.contains('screen')) {
         return createScreen(args);
+      } else if (type.contains('assets')) {
+        return createAssets(args);
       } else {
         print('type not found');
         help();
@@ -28,15 +30,17 @@ void main(List<String> args) async {
 void help() {
   print('Create project: flucreator --org com.example app_name');
   print('Create screen: flucreator --create=screen screen_name');
+  print('Create screen: flucreator --create=assets <folder_name ex:assets>');
   print('Create screen without controller: flucreator --create=screen --no-controller screen_name');
   exit(0);
 }
 
+String firstLetterUpperCase(String raw) {
+  return raw.substring(0, 1).toUpperCase() + raw.substring(1);
+}
+
 void createScreen(List<String> args) async {
   String name;
-  String firstLetterUpperCase(String raw) {
-    return raw.substring(0, 1).toUpperCase() + raw.substring(1);
-  }
 
   String fileNameFormatter(String raw) {
     var name = '';
@@ -90,6 +94,37 @@ void createScreen(List<String> args) async {
     screenSetter(screenFile, packageName, firstLetterUpperCase(name));
   }
 
+  exit(0);
+}
+
+void createAssets(List<String> args) async {
+  print('Reading assets...');
+  var dir = Directory(args.last);
+  var filePaths = <String>[];
+
+  void checkFiles(List<FileSystemEntity> list) {
+    for (var item in list) {
+      if (item is File) {
+        filePaths.add(item.path.split('assets/').last.replaceAll('\\', '/'));
+      } else if (item is Directory) {
+        checkFiles(item.listSync());
+      }
+    }
+  }
+
+  checkFiles(dir.listSync());
+
+  String variableNameCreator(String raw) {
+    return raw.split('/').last.split('.').first.replaceAll('-', '_').toLowerCase().replaceAllMapped(
+        RegExp(r'_[a-z]'), (match) => match.group(0).substring(1, 2).toUpperCase() + match.group(0).substring(2));
+  }
+
+  var assetFile = await File('lib/utils/assets.dart').create(recursive: true);
+  assetFile.writeAsStringSync('''
+class AppAssets {
+  ${filePaths.map((path) => 'static const String ${variableNameCreator(path)} = \'assets/$path\';').join('\n\t')}  
+}
+''');
   exit(0);
 }
 
