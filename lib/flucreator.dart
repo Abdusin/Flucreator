@@ -19,7 +19,7 @@ void screenSetter(File file, String packageName, String name, [String controller
   var getController = '''return GetBuilder<$controllerName>(
       init: $controllerName(),
       builder: (controller) {
-        return Scaffold(
+        return const Scaffold(
           body:Center(
             child:Text('$name'),
           ),

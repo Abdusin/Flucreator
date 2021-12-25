@@ -34,14 +34,28 @@ void help() {
 
 void createScreen(List<String> args) async {
   String name;
+  String fileNameFormatter(String raw) {
+    var name = '';
+    if (raw.toUpperCase() == raw) {
+      return raw.toLowerCase();
+    }
+    name = raw.replaceAllMapped(RegExp(r'[A-Z]'), (match) {
+      return '_' + match.group(0).toLowerCase();
+    });
+    if (name.startsWith('_')) {
+      name = name.substring(1);
+    }
+    return name;
+  }
+
   var noController = args.contains('--no-controller');
   if (args.last.isNotEmpty && !args.last.contains('--create=')) {
-    name = args.last;
+    name = fileNameFormatter(args.last);
   } else {
     stdout.write('Screen Name:');
-    name = stdin.readLineSync(encoding: utf8);
+    name = fileNameFormatter(stdin.readLineSync(encoding: utf8));
   }
-  name = name[0].toUpperCase() + name.substring(1);
+
   var packageName;
   var lines = File('pubspec.yaml').readAsLinesSync();
   for (var element in lines) {
@@ -50,12 +64,14 @@ void createScreen(List<String> args) async {
       break;
     }
   }
-
-  var screenFile = await File('lib/screens/$name.dart').create(recursive: true);
+  if (name.contains('screen')) {
+    name = name.replaceAll('screen', '');
+  }
+  var screenFile = await File('lib/screens/${name}_screen.dart').create(recursive: true);
   if (!noController) {
     var controllerFile = await File('lib/controllers/$name' '_controller.dart').create(recursive: true);
-    screenControllerSetter(controllerFile, name + '_controller');
-    screenSetter(screenFile, packageName, name, name + '_controller');
+    screenControllerSetter(controllerFile, name + 'ScreenController');
+    screenSetter(screenFile, packageName, name, name + 'ScreenController');
   } else {
     screenSetter(screenFile, packageName, name);
   }
