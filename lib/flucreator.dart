@@ -9,15 +9,15 @@ class $name extends GetxController {
 ''');
 }
 
-void screenSetter(File file, String packageName, String name, [bool noController = false]) {
+void screenSetter(File file, String packageName, String name, [String controllerName]) {
   var scaffold = '''return Scaffold(
       body:Center(
         child:Text('$name'),
       ),
     );''';
 
-  var getController = '''return GetBuilder<${name}Controller>(
-      init: ${name}Controller(),
+  var getController = '''return GetBuilder<$controllerName>(
+      init: $controllerName(),
       builder: (controller) {
         return Scaffold(
           body:Center(
@@ -29,13 +29,13 @@ void screenSetter(File file, String packageName, String name, [bool noController
 
   file.writeAsStringSync('''import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-${noController ? "" : "import 'package:" + packageName + "/controllers/" + name + "_controller.dart';\n"}
+${controllerName == null ? "" : "import 'package:" + packageName + "/controllers/" + name + "_controller.dart';\n"}
 class $name extends StatelessWidget {
   const $name({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    ${noController ? scaffold : getController}
+    ${controllerName == null ? scaffold : getController}
   }
 }
 ''');
@@ -48,7 +48,7 @@ void homeControllerSetter(String name) {
 
 void homeScreenSetter(String name) {
   var homeScreen = File('$name/lib/screens/home_screen.dart');
-  screenSetter(homeScreen, '$name', 'HomeScreen');
+  screenSetter(homeScreen, '$name', 'home_screen', 'HomeScreenController');
 }
 
 void appSpacesSetter(String name) {
@@ -102,7 +102,7 @@ void mainFileSetter(String name) {
   mainFile.writeAsStringSync('''import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:$name/screens/HomeScreen.dart';
+import 'package:$name/screens/home_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

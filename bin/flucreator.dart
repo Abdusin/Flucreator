@@ -50,12 +50,14 @@ void createScreen(List<String> args) async {
       break;
     }
   }
-  var screenFile = await File('lib/screens/$name.dart').create(recursive: true);
-  screenSetter(screenFile, packageName, name, noController);
 
+  var screenFile = await File('lib/screens/$name.dart').create(recursive: true);
   if (!noController) {
     var controllerFile = await File('lib/controllers/$name' '_controller.dart').create(recursive: true);
     screenControllerSetter(controllerFile, name + '_controller');
+    screenSetter(screenFile, packageName, name, name + '_controller');
+  } else {
+    screenSetter(screenFile, packageName, name);
   }
 
   exit(0);

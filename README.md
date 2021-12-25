@@ -34,11 +34,11 @@ pub global activate --source path .
 
 # Path
  * Controllers
-    * HomeScreenController.dart
+    * home_screen_controller.dart
  * Models
  * Screens
-    * HomeScreen.dart
+    * home_screen.dart
  * Utils
-    * AppSpaces.dart
+    * app_spaces.dart
  * Widgets
  * main.dart
