@@ -53,6 +53,7 @@ void createScreen(List<String> args) async {
     name = raw.replaceAllMapped(RegExp(r'_[a-z]'), (match) {
       return match.group(0).substring(1, 2).toUpperCase() + match.group(0).substring(2);
     });
+    name = name.substring(0, 1).toUpperCase() + name.substring(1);
     return name;
   }
 
@@ -75,15 +76,14 @@ void createScreen(List<String> args) async {
   if (name.contains('screen')) {
     name = name.replaceAll('screen', '');
   }
-  var screenName = classNameFormatter(name) + 'Screen';
   var screenFile = await File('lib/screens/${name}_screen.dart').create(recursive: true);
   if (!noController) {
     var controllerName = classNameFormatter(name) + 'ScreenController';
-    var controllerFile = await File('lib/controllers/$name' '_controller.dart').create(recursive: true);
+    var controllerFile = await File('lib/controllers/$name' '_screen_controller.dart').create(recursive: true);
     screenControllerSetter(controllerFile, controllerName);
-    screenSetter(screenFile, packageName, screenName, controllerName);
+    screenSetter(screenFile, packageName, name, controllerName);
   } else {
-    screenSetter(screenFile, packageName, screenName);
+    screenSetter(screenFile, packageName, name);
   }
 
   exit(0);

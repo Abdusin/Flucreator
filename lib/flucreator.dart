@@ -29,9 +29,9 @@ void screenSetter(File file, String packageName, String name, [String controller
 
   file.writeAsStringSync('''import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-${controllerName == null ? "" : "import 'package:" + packageName + "/controllers/" + name + "_controller.dart';\n"}
-class $name extends StatelessWidget {
-  const $name({Key? key}) : super(key: key);
+${controllerName == null ? "" : "import 'package:" + packageName + "/controllers/" + name + "_screen_controller.dart';\n"}
+class ${name}Screen extends StatelessWidget {
+  const ${name}Screen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
