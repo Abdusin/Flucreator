@@ -122,7 +122,7 @@ void createAssets(List<String> args) async {
   var assetFile = await File('lib/utils/assets.dart').create(recursive: true);
   assetFile.writeAsStringSync('''
 class AppAssets {
-  ${filePaths.map((path) => 'static const String ${variableNameCreator(path)} = \'assets/$path\';').join('\n\t')}  
+  ${filePaths.map((path) => 'static const String ${variableNameCreator(path)} = \'$path\';').join('\n\t')}  
 }
 ''');
   exit(0);
