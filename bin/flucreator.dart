@@ -5,7 +5,7 @@ import 'package:process_run/shell_run.dart';
 
 void main(List<String> args) async {
   if (args.contains('-h') || args.contains('--help')) {
-    help();
+    return help();
   }
   var index = args.indexWhere((arg) => arg.startsWith('--create='));
   if (index == -1) {
@@ -54,8 +54,8 @@ void createScreen(List<String> args) async {
   screenSetter(screenFile, packageName, name, noController);
 
   if (!noController) {
-    var controllerFile = await File('lib/controllers/$name' 'Controller.dart').create(recursive: true);
-    screenControllerSetter(controllerFile, name + 'Controller');
+    var controllerFile = await File('lib/controllers/$name' '_controller.dart').create(recursive: true);
+    screenControllerSetter(controllerFile, name + '_controller');
   }
 
   exit(0);
@@ -106,4 +106,5 @@ void createProject(List<String> args) async {
   homeControllerSetter(name);
   homeScreenSetter(name);
   appSpacesSetter(name);
+  return exit(0);
 }
