@@ -5,7 +5,6 @@ import 'package:process_run/shell_run.dart';
 import 'package:change_case/change_case.dart';
 
 void main(List<String> args) async {
-  return appSpacesSetter('');
   if (args.contains('-h') || args.contains('--help')) {
     return help();
   }
