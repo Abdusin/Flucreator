@@ -1,79 +1,91 @@
 import 'dart:io';
 
+import 'package:code_builder/code_builder.dart';
+import 'package:dart_style/dart_style.dart';
+
+final formatter = DartFormatter();
 void screenControllerSetter(File file, String name) {
-  file.writeAsStringSync('''import 'package:get/get.dart';
-    
-class $name extends GetxController {
-
+  var getxController = Class((b) => b
+    ..name = name
+    ..extend = refer('GetxController'));
+  var lib = Library((b) => b
+    ..directives.add(Directive.import('package:get/get.dart'))
+    ..body.add(getxController));
+  file.writeAsStringSync(formatter.format(DartEmitter.scoped(useNullSafetySyntax: true).visitLibrary(lib).toString()));
 }
-''');
-}
 
-void screenSetter(File file, String packageName, String name, [String controllerName]) {
-  var scaffold = '''return Scaffold(
+void screenSetter(File file, String packageName, String name, [String? controllerName]) {
+  var scaffold = '''return const Scaffold(
       body:Center(
         child:Text('$name'),
       ),
     );''';
 
-  var getController = '''return GetBuilder<$controllerName>(
+  final hasController = controllerName != null;
+
+  if (hasController) {
+    scaffold = '''return GetBuilder<$controllerName>(
       init: $controllerName(),
       builder: (controller) {
-        return const Scaffold(
-          body:Center(
-            child:Text('$name'),
-          ),
-        );
+        $scaffold
       },
     );''';
-
-  file.writeAsStringSync('''import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-${controllerName == null ? "" : "import 'package:" + packageName + "/controllers/" + name.toLowerCase() + "_screen_controller.dart';\n"}
-class ${name}Screen extends StatelessWidget {
-  const ${name}Screen({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    ${controllerName == null ? scaffold : getController}
   }
-}
-''');
+
+  var directives = [
+    Directive.import('package:get/get.dart'),
+    Directive.import('package:flutter/material.dart'),
+    if (hasController) ...[
+      Directive.import('package:' + packageName + '/controllers/' + name.toLowerCase() + '_screen_controller.dart'),
+    ]
+  ];
+
+  var lib = Library((b) => b
+    ..directives.addAll(directives)
+    ..body.add(statelessWidgetGenerator('${name}Screen', scaffold)));
+  file.writeAsStringSync(formatter.format(DartEmitter.scoped(useNullSafetySyntax: true).visitLibrary(lib).toString()));
 }
 
-void homeControllerSetter(String name) {
-  var homeController = File('$name/lib/controllers/home_screen_controller.dart');
+void homeControllerSetter(String packageName) {
+  var homeController = File('$packageName/lib/controllers/home_screen_controller.dart');
   screenControllerSetter(homeController, 'HomeScreenController');
 }
 
-void homeScreenSetter(String name) {
-  var homeScreen = File('$name/lib/screens/home_screen.dart');
-  screenSetter(homeScreen, '$name', 'home_screen', 'HomeScreenController');
+void homeScreenSetter(String packageName) {
+  var homeScreen = File('$packageName/lib/screens/home_screen.dart');
+  screenSetter(homeScreen, '$packageName', 'Home', 'HomeScreenController');
 }
 
+enum Axis { horizontal, vertical }
 void appSpacesSetter(String name) {
-  var appSpaces = File('$name/lib/utils/app_spaces.dart');
-  appSpaces.writeAsStringSync('''import 'package:flutter/material.dart' show SizedBox;
+  Field fieldGenerator(Axis axis, num count) {
+    return Field(
+      (b) => b
+        ..name = '${axis.name}$count'
+        ..modifier = FieldModifier.constant
+        ..static = true
+        ..assignment = Code('SizedBox(${axis == Axis.horizontal ? 'width' : 'height'}: $count)'),
+    );
+  }
 
-class AppSpaces {
-  static const vertical5 = SizedBox(height: 5);
-  static const vertical10 = SizedBox(height: 10);
-  static const vertical15 = SizedBox(height: 15);
-  static const vertical20 = SizedBox(height: 20);
-  static const vertical25 = SizedBox(height: 25);
-  static const vertical30 = SizedBox(height: 30);
-  static const vertical40 = SizedBox(height: 40);
-  static const vertical50 = SizedBox(height: 50);
-  static const horizontal5 = SizedBox(width: 5);
-  static const horizontal10 = SizedBox(width: 10);
-  static const horizontal15 = SizedBox(width: 15);
-  static const horizontal20 = SizedBox(width: 20);
-  static const horizontal25 = SizedBox(width: 25);
-  static const horizontal30 = SizedBox(width: 30);
-  static const horizontal40 = SizedBox(width: 40);
-  static const horizontal50 = SizedBox(width: 50);
-}
-''');
+  var lib = Library(
+    (lib) => lib
+      ..directives.add(Directive.import('package:flutter/material.dart', show: ['SizedBox']))
+      ..body.addAll([
+        Class(
+          (c) => c
+            ..name = 'AppSpaces'
+            ..fields.addAll(
+              [
+                ...List.generate(10, (index) => fieldGenerator(Axis.horizontal, (index + 1) * 5)),
+                ...List.generate(10, (index) => fieldGenerator(Axis.vertical, (index + 1) * 5)),
+              ],
+            ),
+        ),
+      ]),
+  );
+  File('app_spaces.dart')
+      .writeAsStringSync(formatter.format(DartEmitter.scoped(useNullSafetySyntax: true).visitLibrary(lib).toString()));
 }
 
 void pubSpecSetter(String name) {
@@ -85,12 +97,12 @@ void pubSpecSetter(String name) {
     pubLines.removeAt(index);
     pubLines.insertAll(index, [
       '#State Management & Utils',
-      '  get: ^4.3.8',
+      '  get: ^4.6.1',
       '  get_storage: ^2.0.3',
       '',
       '#Fonts & Icons',
-      '  cupertino_icons: ^1.0.3',
-      '  google_fonts: ^2.1.0',
+      '  cupertino_icons: ^1.0.4',
+      '  google_fonts: ^2.3.1',
       '',
     ]);
   }
@@ -98,27 +110,27 @@ void pubSpecSetter(String name) {
 }
 
 void mainFileSetter(String name) {
-  var mainFile = File('$name/lib/main.dart');
-  mainFile.writeAsStringSync('''import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:get/get.dart';
-import 'package:$name/screens/home_screen.dart';
-
-void main() {
+  var mainFunction = Method((m) => m
+    ..name = 'main'
+    ..body = Code('''
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.white,
     statusBarIconBrightness: Brightness.dark,
   ));
   runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return GetMaterialApp(
+'''));
+  var lib = Library(
+    (lib) => lib
+      ..directives.addAll([
+        Directive.import('package:flutter/material.dart'),
+        Directive.import('package:flutter/services.dart'),
+        Directive.import('package:get/get.dart'),
+        Directive.import('package:$name/screens/home_screen.dart'),
+      ])
+      ..body.addAll([
+        mainFunction,
+        statelessWidgetGenerator('MyApp', '''return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: '$name',
       theme: ThemeData(
@@ -126,8 +138,48 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: const HomeScreen(),
-    );
-  }
+    );''')
+      ]),
+  );
+  File('$name/lib/main.dart')
+      .writeAsStringSync(formatter.format(DartEmitter.scoped(useNullSafetySyntax: true).visitLibrary(lib).toString()));
 }
-''');
+
+Class statelessWidgetGenerator(String name, String code) {
+  return Class(
+    (b) => b
+      ..name = name
+      ..extend = refer('StatelessWidget')
+      ..constructors.add(
+        Constructor(
+          (b) => b
+            ..optionalParameters.add(
+              Parameter(
+                (b) => b
+                  ..name = 'key'
+                  ..type = refer('Key'),
+              ),
+            )
+            ..initializers.add(
+              Code('super(key:key)'),
+            ),
+        ),
+      )
+      ..methods.add(
+        Method(
+          (b) => b
+            ..name = 'build'
+            ..returns = refer('Widget')
+            ..requiredParameters.add(
+              Parameter(
+                (b) => b
+                  ..name = 'context'
+                  ..type = refer('BuildContext'),
+              ),
+            )
+            ..annotations.add(CodeExpression(Code('override')))
+            ..body = Code(code),
+        ),
+      ),
+  );
 }
