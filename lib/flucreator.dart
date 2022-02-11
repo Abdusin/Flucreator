@@ -153,11 +153,13 @@ Class statelessWidgetGenerator(String name, String code) {
       ..constructors.add(
         Constructor(
           (b) => b
+            ..constant = true
             ..optionalParameters.add(
               Parameter(
                 (b) => b
+                  ..named = true
                   ..name = 'key'
-                  ..type = refer('Key'),
+                  ..type = refer('Key?'),
               ),
             )
             ..initializers.add(
