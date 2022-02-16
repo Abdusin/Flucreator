@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'package:change_case/change_case.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
 
@@ -14,7 +14,7 @@ void screenControllerSetter(File file, String name) {
   file.writeAsStringSync(formatter.format(DartEmitter.scoped(useNullSafetySyntax: true).visitLibrary(lib).toString()));
 }
 
-void screenSetter(File file, String packageName, String name, [String? controllerName]) {
+void screenSetter(File file, String packageName, String name, {String? controllerName, String path = ''}) {
   var scaffold = '''return const Scaffold(
       body:Center(
         child:Text('$name'),
@@ -36,7 +36,8 @@ void screenSetter(File file, String packageName, String name, [String? controlle
     Directive.import('package:get/get.dart'),
     Directive.import('package:flutter/material.dart'),
     if (hasController) ...[
-      Directive.import('package:' + packageName + '/controllers/' + name.toLowerCase() + '_screen_controller.dart'),
+      Directive.import(
+          'package:' + packageName + '/controllers/$path' + name.toLowerCase() + '_screen_controller.dart'),
     ]
   ];
 
@@ -53,7 +54,7 @@ void homeControllerSetter(String packageName) {
 
 void homeScreenSetter(String packageName) {
   var homeScreen = File('$packageName/lib/screens/home_screen.dart');
-  screenSetter(homeScreen, '$packageName', 'Home', 'HomeScreenController');
+  screenSetter(homeScreen, '$packageName', 'Home', controllerName: 'HomeScreenController');
 }
 
 enum Axis { horizontal, vertical }
@@ -84,7 +85,45 @@ void appSpacesSetter(String name) {
         ),
       ]),
   );
-  File('app_spaces.dart')
+  File('$name/lib/utils/app_spaces.dart')
+      .writeAsStringSync(formatter.format(DartEmitter.scoped(useNullSafetySyntax: true).visitLibrary(lib).toString()));
+}
+
+void appRouteSetter(List<String> screens) {
+  String fieldGenerator(String screen) {
+    var name = screen.split('/').last.toPascalCase();
+    return 'GetPage(name: AppRoutes.${name.toCamelCase()}, page: () => const $name())';
+  }
+
+  var lib = Library(
+    (lib) => lib
+      ..directives.add(Directive.import('package:get/get.dart'))
+      ..directives.addAll(screens.map((e) => Directive.import('package:culina/screens/$e')))
+      ..body.addAll([
+        Class(
+          (c) => c
+            ..name = 'AppRoutes'
+            ..fields.addAll(
+              [
+                ...screens.map((e) => Field((f) => f
+                  ..static = true
+                  ..name = e.split('/').last.split('.').first.toCamelCase()
+                  ..assignment = Code('"/${e.split('.').first}"'))),
+                Field(
+                  (b) => b
+                    ..name = 'routes'
+                    ..modifier = FieldModifier.final$
+                    ..static = true
+                    ..assignment = Code('''[
+                      ${screens.map((screen) => fieldGenerator(screen.split('.').first)).join(',\n')}
+                    ]'''),
+                ),
+              ],
+            ),
+        ),
+      ]),
+  );
+  File('lib/utils/routes.dart')
       .writeAsStringSync(formatter.format(DartEmitter.scoped(useNullSafetySyntax: true).visitLibrary(lib).toString()));
 }
 
