@@ -42,7 +42,7 @@ void help() {
   printBlue('Create project: flucreator --org com.example app_name');
   printBlue('Create route: flucreator --create=route');
   printBlue('Create assets: flucreator --create=assets <folder_name ex:assets>');
-  printBlue('Create screen: flucreator --create=screen screen_name');
+  printBlue('Create screen: flucreator --create=screen <screen_name ex:home_scree || folder/screen_name>');
   printBlue('Create screen without controller: flucreator --create=screen --no-controller screen_name');
   exit(0);
 }

@@ -16,6 +16,7 @@ flucreator
 #### Normal Usage (Screen Create)
 ```
 fluecretor --create=screen ExampleScreen
+fluecretor --create=screen Folder/ExampleScreen
 fluecretor --create=screen --no-controller ExampleScreen
 ```
 
