@@ -36,8 +36,7 @@ void screenSetter(File file, String packageName, String name, {String? controlle
     Directive.import('package:get/get.dart'),
     Directive.import('package:flutter/material.dart'),
     if (hasController) ...[
-      Directive.import(
-          'package:' + packageName + '/controllers/$path' + name.toLowerCase() + '_screen_controller.dart'),
+      Directive.import('package:$packageName$path'),
     ]
   ];
 
@@ -89,7 +88,7 @@ void appSpacesSetter(String name) {
       .writeAsStringSync(formatter.format(DartEmitter.scoped(useNullSafetySyntax: true).visitLibrary(lib).toString()));
 }
 
-void appRouteSetter(List<String> screens) {
+void appRouteSetter(String packageName, List<String> screens) {
   String fieldGenerator(String screen) {
     var name = screen.split('/').last.toPascalCase();
     return 'GetPage(name: AppRoutes.${name.toCamelCase()}, page: () => const $name())';
@@ -98,7 +97,7 @@ void appRouteSetter(List<String> screens) {
   var lib = Library(
     (lib) => lib
       ..directives.add(Directive.import('package:get/get.dart'))
-      ..directives.addAll(screens.map((e) => Directive.import('package:culina/screens/$e')))
+      ..directives.addAll(screens.map((e) => Directive.import('package:$packageName/screens/$e')))
       ..body.addAll([
         Class(
           (c) => c

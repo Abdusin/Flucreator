@@ -1,3 +1,7 @@
+## 2.0.7
+
+- readme updates
+
 ## 2.0.6
 
 - fixed bugs

@@ -76,7 +76,8 @@ void createScreen(List<String> args) async {
     var controllerName = name.toPascalCase() + 'ScreenController';
     var controllerFile = await File('lib/controllers/$path$name' '_screen_controller.dart').create(recursive: true);
     screenControllerSetter(controllerFile, controllerName);
-    screenSetter(screenFile, packageName, name.toPascalCase(), controllerName: controllerName, path: path);
+    screenSetter(screenFile, packageName, name.toPascalCase(),
+        controllerName: controllerName, path: '/controllers/$path$name' '_screen_controller.dart');
   } else {
     screenSetter(screenFile, packageName, name.toPascalCase());
   }
@@ -188,6 +189,6 @@ void createRoute() async {
   }
 
   var screens = getDirTree('lib/screens/');
-  appRouteSetter(screens);
+  appRouteSetter(packageName, screens);
   exit(0);
 }
