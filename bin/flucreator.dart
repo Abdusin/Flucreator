@@ -42,7 +42,7 @@ void help() {
   printBlue('Create project: flucreator --org com.example app_name');
   printBlue('Create route: flucreator --create=route');
   printBlue('Create assets: flucreator --create=assets <folder_name ex:assets>');
-  printBlue('Create screen: flucreator --create=screen <screen_name ex:home_scree || folder/screen_name>');
+  printBlue('Create screen: flucreator --create=screen <screen_name ex:screen || screen_name || folder/screen_name>');
   printBlue('Create screen without controller: flucreator --create=screen --no-controller screen_name');
   exit(0);
 }
@@ -60,7 +60,7 @@ void createScreen(List<String> args) async {
     var splittedData = args.last.replaceAll('\\', '/').split('/');
     if (splittedData.length > 1) {
       path = splittedData.sublist(0, splittedData.length - 1).join('/') + '/';
-      name = splittedData.last;
+      name = splittedData.last.toSnakeCase();
     } else {
       name = args.last.toSnakeCase();
     }
@@ -125,7 +125,7 @@ class AppAssets {
 }
 
 void createProject(List<String> args) async {
-  var shell = Shell();
+  var shell = Shell(verbose: false);
   String? name;
   String? org;
   String? extraArgment;
@@ -152,19 +152,20 @@ void createProject(List<String> args) async {
   stdout.write('extraArgment:');
   extraArgment = stdin.readLineSync(encoding: utf8) ?? '';
 
-  var code = 'flutter create --org $org $extraArgment $name';
+  var code = 'flutter create --org $org --platforms=ios,android,web $extraArgment $name';
+  printBlue('Creating project...');
   var results = await shell.run(code);
   if (results.isEmpty) return printRed('Project Not Created');
   var text = results.first.stdout.toString();
   if (!text.contains('Creat')) return printRed('Project Not Created');
-
+  printBlue('Creating Directories...');
   Directory('$name/lib/screens').createSync(recursive: true);
   Directory('$name/lib/controllers').createSync(recursive: true);
   Directory('$name/lib/models').createSync(recursive: true);
   Directory('$name/lib/widgets').createSync(recursive: true);
   Directory('$name/lib/utils').createSync(recursive: true);
-
-  pubSpecSetter(name);
+  printMagenta('Creating files...');
+  await pubSpecSetter(name);
   mainFileSetter(name);
   homeControllerSetter(name);
   homeScreenSetter(name);

@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:change_case/change_case.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
+import 'package:process_run/shell.dart';
 
 final formatter = DartFormatter();
 void screenControllerSetter(File file, String name) {
@@ -68,6 +70,16 @@ void appSpacesSetter(String name) {
     );
   }
 
+  Field spacerFieldGenerator(num flex) {
+    return Field(
+      (b) => b
+        ..name = 'space'
+        ..modifier = FieldModifier.constant
+        ..static = true
+        ..assignment = Code('Spacer(flex:$flex)'),
+    );
+  }
+
   var lib = Library(
     (lib) => lib
       ..directives.add(Directive.import('package:flutter/material.dart', show: ['SizedBox']))
@@ -77,6 +89,7 @@ void appSpacesSetter(String name) {
             ..name = 'AppSpaces'
             ..fields.addAll(
               [
+                ...List.generate(10, (index) => spacerFieldGenerator((index + 1))),
                 ...List.generate(10, (index) => fieldGenerator(Axis.horizontal, (index + 1) * 5)),
                 ...List.generate(10, (index) => fieldGenerator(Axis.vertical, (index + 1) * 5)),
               ],
@@ -126,25 +139,23 @@ void appRouteSetter(String packageName, List<String> screens) {
       .writeAsStringSync(formatter.format(DartEmitter.scoped(useNullSafetySyntax: true).visitLibrary(lib).toString()));
 }
 
-void pubSpecSetter(String name) {
-  var pubSpec = File('$name/pubspec.yaml');
-  var pubLines = pubSpec.readAsLinesSync();
-  pubLines.removeWhere((element) => element.trim().startsWith('#'));
-  var index = pubLines.indexWhere((element) => element.contains('cupertino'));
-  if (index != -1) {
-    pubLines.removeAt(index);
-    pubLines.insertAll(index, [
-      '#State Management & Utils',
-      '  get: ^4.6.1',
-      '  get_storage: ^2.0.3',
-      '',
-      '#Fonts & Icons',
-      '  cupertino_icons: ^1.0.4',
-      '  google_fonts: ^2.3.1',
-      '',
-    ]);
+Future pubSpecSetter(String name) async {
+  var shell = Shell(
+    workingDirectory: Directory('./$name').path,
+    verbose: false,
+    throwOnError: false,
+    commandVerbose: false,
+    commentVerbose: false,
+  );
+  var packages = [
+    'get',
+    'get_storage',
+    'cupertino_icons',
+    'google_fonts',
+  ];
+  for (var package in packages) {
+    await shell.run('flutter pub add $package');
   }
-  pubSpec.writeAsStringSync(pubLines.join('\n'));
 }
 
 void mainFileSetter(String name) {
