@@ -165,11 +165,11 @@ void createProject(List<String> args) async {
   Directory('$name/lib/widgets').createSync(recursive: true);
   Directory('$name/lib/utils').createSync(recursive: true);
   printMagenta('Creating files...');
-  await pubSpecSetter(name);
   mainFileSetter(name);
   homeControllerSetter(name);
   homeScreenSetter(name);
   appSpacesSetter(name);
+  await pubSpecSetter(name);
   exit(0);
 }
 

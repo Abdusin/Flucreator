@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:change_case/change_case.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
+import 'package:flucreator/console.dart';
 import 'package:process_run/shell.dart';
 
 final formatter = DartFormatter();
@@ -55,7 +56,13 @@ void homeControllerSetter(String packageName) {
 
 void homeScreenSetter(String packageName) {
   var homeScreen = File('$packageName/lib/screens/home_screen.dart');
-  screenSetter(homeScreen, '$packageName', 'Home', controllerName: 'HomeScreenController');
+  screenSetter(
+    homeScreen,
+    '$packageName',
+    'Home',
+    controllerName: 'HomeScreenController',
+    path: '/controllers/home_screen_controller.dart',
+  );
 }
 
 enum Axis { horizontal, vertical }
@@ -73,7 +80,7 @@ void appSpacesSetter(String name) {
   Field spacerFieldGenerator(num flex) {
     return Field(
       (b) => b
-        ..name = 'space'
+        ..name = 'space${flex > 1 ? flex : ''}'
         ..modifier = FieldModifier.constant
         ..static = true
         ..assignment = Code('Spacer(flex:$flex)'),
@@ -82,7 +89,7 @@ void appSpacesSetter(String name) {
 
   var lib = Library(
     (lib) => lib
-      ..directives.add(Directive.import('package:flutter/material.dart', show: ['SizedBox']))
+      ..directives.add(Directive.import('package:flutter/material.dart', show: ['SizedBox', 'Spacer']))
       ..body.addAll([
         Class(
           (c) => c
@@ -154,7 +161,11 @@ Future pubSpecSetter(String name) async {
     'google_fonts',
   ];
   for (var package in packages) {
-    await shell.run('flutter pub add $package');
+    try {
+      await shell.run('flutter pub add $package');
+    } catch (e) {
+      printRed('$package installation failed');
+    }
   }
 }
 
