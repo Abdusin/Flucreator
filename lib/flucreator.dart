@@ -122,6 +122,21 @@ void appRouteSetter(String packageName, List<String> screens) {
         Class(
           (c) => c
             ..name = 'AppRoutes'
+            ..methods.addAll(
+              screens.map(
+                (e) {
+                  var name = e.split('/').last.split('.').first.toCamelCase();
+                  return Method(
+                    (p0) => p0
+                      ..static = true
+                      ..lambda = true
+                      ..name = 'navigateTo${name.toUpperFirstCase()}'
+                      ..returns = refer('Future?')
+                      ..body = Code('Get.toNamed($name)'),
+                  );
+                },
+              ),
+            )
             ..fields.addAll(
               [
                 ...screens.map((e) => Field((f) => f

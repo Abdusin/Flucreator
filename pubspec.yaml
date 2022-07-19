@@ -12,6 +12,7 @@ dependencies:
   change_case: ^1.0.1
   code_builder: ^4.1.0
   dart_style: ^2.2.1
+  args: ^2.3.1
 
 executables:
   flucreator: flucreator
