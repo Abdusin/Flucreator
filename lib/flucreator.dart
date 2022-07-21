@@ -235,8 +235,8 @@ Future pubSpecSetter(String name) async {
   }
 }
 
-void routeTypeClassSetter() {
-  if (File('./lib/utils/route_type.dart').existsSync()) return;
+void routeTypeClassSetter([String filePath = './lib/utils/route_type.dart']) {
+  if (File(filePath).existsSync()) return;
   var lib = Library(
     (lib) => lib
       ..body.addAll([
@@ -277,7 +277,7 @@ void routeTypeClassSetter() {
       ]),
   );
   var file = formatter.format(DartEmitter.scoped(useNullSafetySyntax: true).visitLibrary(lib).toString());
-  File('./lib/utils/route_type.dart').writeAsStringSync(file);
+  File(filePath).writeAsStringSync(file);
 }
 
 void mainFileSetter(String name) {

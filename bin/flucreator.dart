@@ -11,6 +11,7 @@ var parser = ArgParser();
 void main(List<String> args) async {
   parser.addFlag('no-controller', help: 'Do not generate controller');
   parser.addFlag('no-route', help: 'Do not generate route annonation');
+  parser.addFlag('auto-route', help: 'Run create route code automatically');
   parser.addFlag('create-annonation', help: 'Create annonation for every screen', hide: true);
   parser.addFlag('help', abbr: 'h', help: 'show help', defaultsTo: false);
   parser.addOption('create', abbr: 'c', help: 'create a new flutter project', allowed: [
@@ -61,6 +62,7 @@ void help() {
   printBlue('Create assets: flucreator --create=assets <folder_name ex:assets>');
   printBlue('Create screen: flucreator --create=screen <screen_name ex:screen || screen_name || folder/screen_name>');
   printBlue('Create screen without controller: flucreator --create=screen --no-controller screen_name');
+  printBlue('Create Route After Creating Screen: flucreator --create=screen --auto-route screen_name');
   print(parser.usage);
   exit(0);
 }
@@ -75,6 +77,7 @@ void createScreen(ArgResults args) async {
 
   var noController = args['no-controller'] == true;
   var noRoute = args['no-route'] == true;
+  var autoRoute = args['auto-route'] == true;
   if (args.rest.isNotEmpty && args.rest.first.isNotEmpty && args['create'] != null) {
     var splittedData = args.rest.first.replaceAll('\\', '/').split('/');
     if (splittedData.length > 1) {
@@ -101,6 +104,9 @@ void createScreen(ArgResults args) async {
     screenSetter(screenFile, packageName, name.toPascalCase(), noRoute: noRoute);
   }
 
+  if (autoRoute) {
+    createRoute(args);
+  }
   exit(0);
 }
 
@@ -172,7 +178,7 @@ void createProject(ArgResults args) async {
   Directory('$name/lib/models').createSync(recursive: true);
   Directory('$name/lib/widgets').createSync(recursive: true);
   Directory('$name/lib/utils').createSync(recursive: true);
-  routeTypeClassSetter();
+  routeTypeClassSetter('./$name/lib/utils/route_type.dart');
   printMagenta('Creating files...');
   mainFileSetter(name);
   homeControllerSetter(name);
