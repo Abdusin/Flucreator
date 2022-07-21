@@ -43,7 +43,6 @@ void screenSetter(File file, String packageName, String name,
       Directive.import('package:$packageName$path'),
     ],
     if (!noRoute) ...[
-      Directive.import('package:flucreator_generator/types.dart'),
       Directive.import('package:$packageName/utils/route_type.dart'),
     ]
   ];
