@@ -6,17 +6,25 @@ import 'package:flucreator/console.dart';
 import 'package:process_run/shell_run.dart';
 import 'package:change_case/change_case.dart';
 
+var parser = ArgParser();
+
 void main(List<String> args) async {
-  var parser = ArgParser();
   parser.addFlag('no-controller', help: 'Do not generate controller');
+  parser.addFlag('no-route', help: 'Do not generate route annonation');
+  parser.addFlag('create-annonation', help: 'Create annonation for every screen', hide: true);
   parser.addFlag('help', abbr: 'h', help: 'show help', defaultsTo: false);
-  parser.addOption('create', abbr: 'c', help: 'create a new flutter project');
+  parser.addOption('create', abbr: 'c', help: 'create a new flutter project', allowed: [
+    'route',
+    'project',
+    'screen',
+    'assets',
+  ]);
   parser.addOption('org', help: 'organization name');
   parser.addOption('skip', help: 'skip the directories');
 
   var argResult = parser.parse(args);
   if (argResult['help'] == true) {
-    return help();
+    help();
   }
   if (argResult['create'] == null) {
     return createProject(argResult);
@@ -53,6 +61,7 @@ void help() {
   printBlue('Create assets: flucreator --create=assets <folder_name ex:assets>');
   printBlue('Create screen: flucreator --create=screen <screen_name ex:screen || screen_name || folder/screen_name>');
   printBlue('Create screen without controller: flucreator --create=screen --no-controller screen_name');
+  print(parser.usage);
   exit(0);
 }
 
@@ -64,7 +73,8 @@ void createScreen(ArgResults args) async {
   String name;
   var path = '';
 
-  var noController = args['--no-controller'] == true;
+  var noController = args['no-controller'] == true;
+  var noRoute = args['no-route'] == true;
   if (args.rest.isNotEmpty && args.rest.first.isNotEmpty && args['create'] != null) {
     var splittedData = args.rest.first.replaceAll('\\', '/').split('/');
     if (splittedData.length > 1) {
@@ -86,9 +96,9 @@ void createScreen(ArgResults args) async {
     var controllerFile = await File('lib/controllers/$path$name' '_screen_controller.dart').create(recursive: true);
     screenControllerSetter(controllerFile, controllerName);
     screenSetter(screenFile, packageName, name.toPascalCase(),
-        controllerName: controllerName, path: '/controllers/$path$name' '_screen_controller.dart');
+        noRoute: noRoute, controllerName: controllerName, path: '/controllers/$path$name' '_screen_controller.dart');
   } else {
-    screenSetter(screenFile, packageName, name.toPascalCase());
+    screenSetter(screenFile, packageName, name.toPascalCase(), noRoute: noRoute);
   }
 
   exit(0);
@@ -162,6 +172,7 @@ void createProject(ArgResults args) async {
   Directory('$name/lib/models').createSync(recursive: true);
   Directory('$name/lib/widgets').createSync(recursive: true);
   Directory('$name/lib/utils').createSync(recursive: true);
+  routeTypeClassSetter();
   printMagenta('Creating files...');
   mainFileSetter(name);
   homeControllerSetter(name);
@@ -172,6 +183,7 @@ void createProject(ArgResults args) async {
 }
 
 void createRoute(ArgResults argResults) async {
+  routeTypeClassSetter();
   var skipList = <String>[];
   if (argResults['skip'] != null) {
     skipList = argResults['skip'].split(',');
@@ -195,7 +207,89 @@ void createRoute(ArgResults argResults) async {
     return paths;
   }
 
-  var screens = getDirTree('lib/screens/');
-  appRouteSetter(packageName, screens);
+  var screens = <String>[];
+  var routes = <Map>[];
+  final screenClassRegex = RegExp(r'class (\w+)Screen');
+  if (!File('./route.flucreator').existsSync()) {
+    var _screens = getDirTree('lib/screens/');
+    for (var screen in _screens) {
+      var file = File('lib/screens/$screen');
+      var fileTxt = file.readAsLinesSync();
+      var annons = fileTxt.where((element) => element.trim().startsWith('@RouteType'));
+      if (argResults['create-annonation'] == true) {
+        var screenClasses = fileTxt.where((element) => screenClassRegex.hasMatch(element));
+        if (annons.length < screenClasses.length) {
+          printBlue('Creating Annonation for $screen');
+          for (var i = 0; i < screenClasses.length; i++) {
+            var screenClass = screenClasses.elementAt(i);
+            if (fileTxt[fileTxt.indexOf(screenClass) - 1].trim().startsWith('@RouteType')) continue;
+            var className = screenClass.split(' ')[1].split(' ')[0];
+            var annon = "@RouteType('${screen.split('.').first}${i > 0 ? '/$i' : ''}','$className')";
+            fileTxt.insert(fileTxt.indexOf(screenClass), annon);
+            if (!fileTxt.any((element) => element.contains('utils/route_type.dart'))) {
+              fileTxt.insert(0, "import 'package:$packageName/utils/route_type.dart';");
+            }
+          }
+          file.writeAsStringSync(fileTxt.join('\n'));
+          annons = fileTxt.where((element) => element.trim().startsWith('@RouteType'));
+        }
+      }
+      for (var anno in annons) {
+        var data = anno.split('@RouteType(')[1].split(')')[0].split(',');
+        data.add(screen);
+        data.add(fileTxt[fileTxt.indexOf(anno) + 1].trim().split('class ')[1].split(' ')[0]);
+        var path = data[0].trim().replaceAll("'", '').replaceAll('"', '');
+        path = path.startsWith('/') ? path : '/$path';
+        path = !path.endsWith('/') ? path : path.substring(0, path.length - 1);
+        routes.add({
+          'path': path,
+          'fieldName': data[1].trim().replaceAll("'", '').replaceAll('"', ''),
+          'filePath': data[2],
+          'className': data[3],
+        });
+      }
+    }
+  } else {
+    var raw = json.decode(File('./route.flucreator').readAsStringSync());
+    if (raw is List) {
+      routes = raw.cast<Map>();
+    }
+  }
+  var paths = routes.map((e) => e['path'].toString().toLowerCase());
+  var fieldNames = routes.map((e) => e['fieldName'].toString().toLowerCase());
+  if (paths.toSet().length != paths.length) {
+    printRed('Duplicate Paths Found');
+    for (var i = 0; i < routes.length; i++) {
+      if (routes
+              .where((element) =>
+                  element['path'].toString().toLowerCase() == routes.elementAt(i)['path'].toString().toLowerCase())
+              .toList()
+              .length >
+          1) {
+        printRed('lib/screens/${routes.elementAt(i)['filePath']} => ${routes.elementAt(i)['path']}');
+      }
+    }
+    exit(1);
+  } else if (fieldNames.toSet().length != fieldNames.length) {
+    printRed('Duplicate Field Names Found');
+    for (var i = 0; i < routes.length; i++) {
+      if (routes
+              .where((element) =>
+                  element['fieldName'].toString().toLowerCase() ==
+                  routes.elementAt(i)['fieldName'].toString().toLowerCase())
+              .toList()
+              .length >
+          1) {
+        printRed('lib/screens/${routes.elementAt(i)['filePath']} => ${routes.elementAt(i)['fieldName']}');
+      }
+    }
+    exit(1);
+  }
+  printBlue('Creating Routes...');
+  appRouteSetter(
+    packageName,
+    screens: screens,
+    routes: routes,
+  );
   exit(0);
 }

@@ -17,7 +17,8 @@ void screenControllerSetter(File file, String name) {
   file.writeAsStringSync(formatter.format(DartEmitter.scoped(useNullSafetySyntax: true).visitLibrary(lib).toString()));
 }
 
-void screenSetter(File file, String packageName, String name, {String? controllerName, String path = ''}) {
+void screenSetter(File file, String packageName, String name,
+    {String? controllerName, String path = '', bool noRoute = false}) {
   var scaffold = '''return const Scaffold(
       body:Center(
         child:Text('$name'),
@@ -40,12 +41,30 @@ void screenSetter(File file, String packageName, String name, {String? controlle
     Directive.import('package:flutter/material.dart'),
     if (hasController) ...[
       Directive.import('package:$packageName$path'),
+    ],
+    if (!noRoute) ...[
+      Directive.import('package:flucreator_generator/types.dart'),
+      Directive.import('package:$packageName/utils/route_type.dart'),
     ]
   ];
 
-  var lib = Library((b) => b
-    ..directives.addAll(directives)
-    ..body.add(statelessWidgetGenerator('${name}Screen', scaffold)));
+  var lib = Library(
+    (b) => b
+      ..directives.addAll(directives)
+      ..body.add(
+        statelessWidgetGenerator(
+          '${name}Screen',
+          scaffold,
+          annonations: [
+            if (!noRoute)
+              refer('RouteType').call([
+                literalString(file.path.split('lib/screens/').last.replaceAll('_screen.dart', '')),
+                literalString(name),
+              ]),
+          ],
+        ),
+      ),
+  );
   file.writeAsStringSync(formatter.format(DartEmitter.scoped(useNullSafetySyntax: true).visitLibrary(lib).toString()));
 }
 
@@ -108,19 +127,24 @@ void appSpacesSetter(String name) {
       .writeAsStringSync(formatter.format(DartEmitter.scoped(useNullSafetySyntax: true).visitLibrary(lib).toString()));
 }
 
-void appRouteSetter(String packageName, List<String> screens) {
-  String fieldGenerator(String screen) {
-    var name = screen.split('/').last.toPascalCase();
-    return 'GetPage(name: AppRoutes.${name.toCamelCase()}, page: () => const $name())';
+void appRouteSetter(
+  String packageName, {
+  List<String> screens = const [],
+  List<Map> routes = const [],
+}) {
+  String fieldGenerator(String fieldName, String className) {
+    return 'GetPage(name: AppRoutes.${fieldName.toCamelCase()}, page: () => const $className())';
   }
 
   var lib = Library(
     (lib) => lib
       ..directives.add(Directive.import('package:get/get.dart'))
+      ..directives.addAll(
+          routes.map((e) => Directive.import('package:$packageName/screens/${e['filePath']!.split('lib/').last}')))
       ..directives.addAll(screens.map((e) => Directive.import('package:$packageName/screens/$e')))
-      ..body.addAll([
-        Class(
-          (c) => c
+      ..body.addAll(
+        [
+          Class((c) => c
             ..name = 'AppRoutes'
             ..methods.addAll(
               screens.map(
@@ -143,19 +167,46 @@ void appRouteSetter(String packageName, List<String> screens) {
                   ..static = true
                   ..name = e.split('/').last.split('.').first.toCamelCase()
                   ..assignment = Code('"/${e.split('.').first}"'))),
+                ...routes.map(
+                  (e) => Field(
+                    (f) => f
+                      ..static = true
+                      ..name = e['fieldName'].toString().toCamelCase()
+                      ..assignment = Code('"${e['path']}"'),
+                  ),
+                ),
                 Field(
                   (b) => b
                     ..name = 'routes'
                     ..modifier = FieldModifier.final$
                     ..static = true
                     ..assignment = Code('''[
-                      ${screens.map((screen) => fieldGenerator(screen.split('.').first)).join(',\n')}
+                      ${screens.map((screen) {
+                      var name = screen.split('.').first.split('/').last.toPascalCase();
+                      return fieldGenerator(name, name);
+                    }).join(',\n')}
+                      ${routes.map((route) => fieldGenerator(route['fieldName']!, route['className']!)).join(',\n')}
                     ]'''),
                 ),
               ],
-            ),
-        ),
-      ]),
+            )
+            ..methods.addAll(
+              routes.map(
+                (route) {
+                  var name = route['fieldName']!.toString();
+                  return Method(
+                    (p0) => p0
+                      ..static = true
+                      ..lambda = true
+                      ..name = 'navigateTo${name.toPascalCase()}'
+                      ..returns = refer('Future?')
+                      ..body = Code('Get.toNamed(${name.toCamelCase()})'),
+                  );
+                },
+              ),
+            )),
+        ],
+      ),
   );
   File('lib/utils/routes.dart')
       .writeAsStringSync(formatter.format(DartEmitter.scoped(useNullSafetySyntax: true).visitLibrary(lib).toString()));
@@ -182,6 +233,51 @@ Future pubSpecSetter(String name) async {
       printRed('$package installation failed');
     }
   }
+}
+
+void routeTypeClassSetter() {
+  if (File('./lib/utils/route_type.dart').existsSync()) return;
+  var lib = Library(
+    (lib) => lib
+      ..body.addAll([
+        Class(
+          (c) => c
+            ..name = 'RouteType'
+            ..fields.addAll([
+              Field(
+                (b) => b
+                  ..name = 'path'
+                  ..type = refer('String')
+                  ..modifier = FieldModifier.final$,
+              ),
+              Field(
+                (b) => b
+                  ..name = 'fieldName'
+                  ..type = refer('String')
+                  ..modifier = FieldModifier.final$,
+              ),
+            ])
+            ..constructors.add(Constructor(
+              (c) => c
+                ..constant = true
+                ..requiredParameters.addAll([
+                  Parameter(
+                    (p) => p
+                      ..name = 'path'
+                      ..toThis = true,
+                  ),
+                  Parameter(
+                    (p) => p
+                      ..name = 'fieldName'
+                      ..toThis = true,
+                  ),
+                ]),
+            )),
+        ),
+      ]),
+  );
+  var file = formatter.format(DartEmitter.scoped(useNullSafetySyntax: true).visitLibrary(lib).toString());
+  File('./lib/utils/route_type.dart').writeAsStringSync(file);
 }
 
 void mainFileSetter(String name) {
@@ -220,11 +316,12 @@ void mainFileSetter(String name) {
       .writeAsStringSync(formatter.format(DartEmitter.scoped(useNullSafetySyntax: true).visitLibrary(lib).toString()));
 }
 
-Class statelessWidgetGenerator(String name, String code) {
+Class statelessWidgetGenerator(String name, String code, {List<Expression> annonations = const []}) {
   return Class(
     (b) => b
       ..name = name
       ..extend = refer('StatelessWidget')
+      ..annotations.addAll(annonations)
       ..constructors.add(
         Constructor(
           (b) => b

@@ -1,11 +1,11 @@
 name: flucreator
 description: A sample command-line application for flutter project create with getx
-version: 2.0.14
+version: 2.0.15
 homepage: https://github.com/Abdusin/Flucreator
 repository: https://github.com/Abdusin/Flucreator
 
 environment:
-  sdk: '>=2.14.0 <3.0.0'
+  sdk: ">=2.14.0 <3.0.0"
 
 dependencies:
   process_run: ^0.12.2+2
