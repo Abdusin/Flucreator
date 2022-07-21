@@ -5,7 +5,7 @@
     You can use Flucreator to create a new Flutter project.
     Automatically create a new Flutter project with Getx & Directories. 
 
-####  💻  Normal Usage (Project Create)
+####  💻  Usage ~ Project Create
 ```
 // You Can Activate Flucreator With This Command Line 
 pub global activate --source git https://github.com/Abdusin/Flucreator.git
@@ -15,7 +15,7 @@ fluecretor --org com.abdusin myapp
 // If run without arguments console will ask details
 flucreator
 ```
-####  💻  Normal Usage (Screen Create)
+####  💻  Usage ~ Screen Create
 ```
 fluecretor --create=screen ExampleScreen
 fluecretor --create=screen Folder/ExampleScreen
@@ -25,6 +25,20 @@ fluecretor --create=screen --no-controller ExampleScreen
 `$flucreator`             |  `$flutter --create`
 :-------------------------:|:-------------------------:
 ![](https://github.com/Abdusin/Flucreator/blob/main/flucreator.png?raw=true)  |  ![](https://github.com/Abdusin/Flucreator/blob/main/flutter.png?raw=true)
+
+####  💻  Usage ~ Route Create
+```
+flucreator --create=route
+flucreator --create-annonation --create=route
+// --create-annonation on BETA
+// this flag for only old project update if u create new project u dont need use this
+```
+
+####  💻  Usage ~ Assets Create
+```
+flucreator --create=assets assets
+flucreator --create=assets <Folder>
+```
 
 ####  🚀 Advance
 ```
